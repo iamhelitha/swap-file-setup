@@ -50,8 +50,17 @@ fi
 sudo chmod 600 /swapfile
 
 # Set up swap space
-sudo mkswap /swapfile
-sudo swapon /swapfile
+echo -e "\e[1;34m[*]\e[0m Formatting swap file..."
+if ! sudo mkswap /swapfile; then
+    echo -e "\e[1;31m[✗]\e[0m Failed to format swap file!"
+    exit 1
+fi
+
+echo -e "\e[1;34m[*]\e[0m Activating swap file..."
+if ! sudo swapon /swapfile; then
+    echo -e "\e[1;31m[✗]\e[0m Failed to activate swap file!"
+    exit 1
+fi
 
 # Persist the swap file
 if ! grep -q "/swapfile" /etc/fstab; then
@@ -79,6 +88,13 @@ if grep -q "vm.vfs_cache_pressure" /etc/sysctl.conf; then
     sudo sed -i "s/^vm.vfs_cache_pressure=.*/vm.vfs_cache_pressure=$cache_pressure/" /etc/sysctl.conf
 else
     echo "vm.vfs_cache_pressure=$cache_pressure" | sudo tee -a /etc/sysctl.conf
+fi
+
+# Verify swap is active
+echo -e "\e[1;34m[*]\e[0m Verifying swap activation..."
+if ! swapon --show | grep -q "/swapfile"; then
+    echo -e "\e[1;31m[✗]\e[0m Swap file verification failed! Swap is not active."
+    exit 1
 fi
 
 # Final message
